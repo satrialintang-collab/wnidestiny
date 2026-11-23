@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WNI Destiny — Bertahan Hidup adalah Takdir</title>
+<style>
+  :root {
+    --bg: #0f1310;
+    --panel: #1b221d;
+    --panel-light: #263129;
+    --red: #c2352b;
+    --red-dark: #8c2019;
+    --cream: #f4e6c3;
+    --cream-dark: #dfd0a8;
+    --mus: #e7b95f;
+    --ink: #1a1714;
+    --gold: #ffd24a;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: inherit; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    color: var(--cream);
+    user-select: none;
+  }
+
+  /* Wrapper & Panggung Utama 1000x600 Responsif */
+  #wrap {
+    position: fixed;
+    inset: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #1d261f 0%, #0a0d0b 100%);
+  }
+  #stage {
+    width: 1000px;
+    height: 600px;
+    position: relative;
+    flex: none;
+    overflow: hidden;
+    background: linear-gradient(145deg, #25332a 0%, #141916 100%);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 0 2px #f4e6c333;
+  }
+  .abs { position: absolute; }
+
+  /* Papan Permainan SVG */
+  #bsvg {
+    left: 0;
+    top: 0;
+    width: 600px;
+    height: 600px;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.65));
+  }
+  #bsvg text {
+    pointer-events: none;
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+  }
+  .cell {
+    stroke: #1d1a17;
+    stroke-width: 3;
+    cursor: pointer;
+    transition: filter 0.2s, stroke-width 0.2s;
+  }
+  .cell:hover { filter: brightness(1.16); }
+  .cell.cur {
+    stroke: var(--gold);
+    stroke-width: 9;
+    filter: brightness(1.22);
+    animation: pulseCell 1.4s infinite alternate;
+  }
+  @keyframes pulseCell {
+    from { stroke-opacity: 0.75; }
+    to { stroke-opacity: 1; }
+  }
+
+  /* Animasi Pion & Bayangan */
+  .pawn-group {
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .pawn-body {
+    transition: transform 0.14s ease-out;
+  }
+  .pawn-group.hop .pawn-body {
+    transform: translateY(-22px) scale(1.15);
+  }
+  .pawn-group.active-pawn .pawn-ring {
+    animation: ringPulse 1.2s infinite ease-in-out;
+  }
+  @keyframes ringPulse {
+    0%, 100% { r: 17; opacity: 0.9; }
+    50% { r: 24; opacity: 0.2; }
+  }
+
+  /* Panel Kontrol Tengah Papan (Dadu & Giliran) */
+  #ctl {
+    left: 155px;
+    top: 374px;
+    width: 290px;
+    text-align: center;
+    color: var(--cream);
+    text-shadow: 0 2px 4px #000;
+    z-index: 10;
+  }
+  #turn {
+    font-weight: 800;
+    font-size: 14px;
+    min-height: 20px;
+    background: rgba(20, 18, 15, 0.78);
+    padding: 3px 12px;
+    border-radius: 99px;
+    display: inline-block;
+    border: 1px solid #ffffff22;
+    margin-bottom: 4px;
+  }
+  #dice-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    margin: 4px 0 6px;
+  }
+  .die {
+    width: 38px;
+    height: 38px;
+    background: var(--cream);
+    color: var(--ink);
+    border-radius: 8px;
+    border: 2.5px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+    font-weight: 900;
+    box-shadow: 0 4px 0 var(--ink), 0 6px 12px rgba(0,0,0,0.6);
+    transition: transform 0.15s;
+  }
+  .die.rolling {
+    animation: diceShake 0.12s infinite alternate ease-in-out;
+    background: var(--gold);
+  }
+  @keyframes diceShake {
+    0% { transform: rotate(-18deg) scale(1.1) translateY(-4px); }
+    100% { transform: rotate(18deg) scale(1.1) translateY(2px); }
+  }
+  #dice-sum {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--gold);
+    min-height: 16px;
+    margin-bottom: 4px;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.12s, filter 0.15s, background 0.2s;
+  }
+  button:active:not(:disabled) { transform: scale(0.95); }
+  #roll {
+    font-size: 14px;
+    font-weight: 900;
+    padding: 8px 26px;
+    border-radius: 99px;
+    border: 2px solid #fff8;
+    background: linear-gradient(180deg, #d84338, var(--red-dark));
+    color: #fff;
+    box-shadow: 0 4px 0 #14120f, 0 6px 14px rgba(0,0,0,0.5);
+    letter-spacing: 0.5px;
+  }
+  #roll:hover:not(:disabled) { filter: brightness(1.12); }
+  #roll:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+  /* Panel Samping Kanan */
+  #side {
+    left: 608px;
+    top: 10px;
+    width: 382px;
+    height: 544px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  #top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font: 900 24px Impact, "Arial Black", sans-serif;
+    letter-spacing: 1px;
+    color: var(--cream);
+    background: #141815;
+    padding: 5px 12px;
+    border-radius: 10px;
+    border: 1px solid #ffffff1a;
+  }
+  #top b { color: #e04836; }
+  .top-btns { display: flex; gap: 6px; }
+
+  /* Aksi Strategis Pemain */
+  #actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    background: #181f1a;
+    padding: 6px;
+    border-radius: 10px;
+    border: 1px solid #ffffff18;
+  }
+  .act-btn {
+    padding: 5px 4px;
+    border-radius: 7px;
+    border: 1.5px solid #ffffff28;
+    background: #28352c;
+    color: var(--cream);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .act-btn:hover:not(:disabled) {
+    background: #35473b;
+    border-color: var(--gold);
+  }
+  .act-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .act-btn small { display: block; font-size: 9.5px; color: var(--mus); font-weight: 600; }
+
+  /* Kartu Status Pemain */
+  #ps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .round-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    font-size: 12.5px;
+    background: #141815;
+    padding: 4px 10px;
+    border-radius: 7px;
+    color: var(--mus);
+  }
+  .pc {
+    border-left: 6px solid var(--c);
+    background: var(--panel-light);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .pc.on {
+    outline: 2px solid var(--gold);
+    background: #314036;
+    transform: translateX(-3px);
+  }
+  .pc.x { opacity: 0.42; text-decoration: line-through; }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2px;
+  }
+
+  /* Log Aktivitas */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 12px;
+    background: #161c18;
+    padding: 8px 10px;
+    border-radius: 9px;
+    line-height: 1.45;
+    border: 1px solid #ffffff1f;
+  }
+  #log div {
+    padding: 2px 0;
+    border-bottom: 1px dashed #ffffff10;
+    animation: fadeInLog 0.25s ease-out;
+  }
+  @keyframes fadeInLog {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Tombol Bawah Kanan */
+  .tg {
+    padding: 4px 11px;
+    border-radius: 99px;
+    border: 1.5px solid #ffffff44;
+    background: #28352c;
+    color: var(--cream);
+    font: 700 11.5px 'Trebuchet MS', Arial, sans-serif;
+  }
+  .tg:hover { background: #36473b; border-color: var(--gold); }
+  #tgs {
+    right: 12px;
+    bottom: 9px;
+    z-index: 70;
+    display: flex;
+    gap: 6px;
+  }
+  .pop {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 32px;
+    width: 350px;
+    max-height: 440px;
+    overflow-y: auto;
+    background: #181f1a;
+    border: 2px solid var(--mus);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--cream);
+    text-align: left;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.85);
+  }
+  .pop h4 { margin: 0 0 6px; color: var(--gold); font-size: 14px; }
+  .pop ul { margin: 4px 0 0 16px; padding: 0; }
+  .pop li { margin-bottom: 4px; }
+
+  /* Overlay Modal Pemberitahuan & Pemilu */
+  .ov {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: rgba(8, 10, 9, 0.78);
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .cd {
+    width: 440px;
+    max-width: 92%;
+    border-radius: 18px;
+    padding: 22px 24px;
+    text-align: center;
+    animation: popCard 0.32s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    border: 4px solid var(--ink);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+    position: relative;
+  }
+  .cd.red { background: linear-gradient(160deg, #c8392f, #96221a); color: #fff; }
+  .cd.grn { background: linear-gradient(160deg, #345445, #21362c); color: #fff; }
+  .cd.crm { background: linear-gradient(160deg, #f7ebd0, #e4d2a8); color: #261e15; }
+  .cd.mus { background: linear-gradient(160deg, #f0c56b, #d6a23e); color: #261e15; }
+  .cd-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: rgba(0,0,0,0.22);
+    margin-bottom: 8px;
+  }
+  .cd h2 { margin: 0 0 10px; font-size: 21px; line-height: 1.25; }
+  .cd p {
+    margin: 0 0 16px;
+    white-space: pre-wrap;
+    line-height: 1.55;
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+  .cd-timer-wrap {
+    width: 100%;
+    height: 6px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .cd-timer-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--gold);
+    transition: width linear;
+  }
+  .cd button, .go {
+    padding: 10px 32px;
+    border-radius: 99px;
+    border: 2px solid rgba(255,255,255,0.25);
+    font-weight: 900;
+    font-size: 15px;
+    background: var(--ink);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+  }
+  .cd button:hover { filter: brightness(1.2); }
+  .vote-opts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .vote-btn {
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 2px solid var(--ink);
+    background: rgba(255,255,255,0.9);
+    color: var(--ink);
+    font-weight: 800;
+    font-size: 13.5px;
+  }
+  .vote-btn:hover { background: var(--gold); }
+
+  @keyframes popCard {
+    from { transform: scale(0.72) translateY(15px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  /* ========================================================
+     DESAIN LOBI PROPAGANDA SATIRE RETRO YANG LEBIH MEGAH
+     ======================================================== */
+  #lobby {
+    z-index: 40;
+    gap: 32px;
+    background:
+      radial-gradient(circle at 26% 50%, rgba(214, 64, 45, 0.38) 0%, transparent 52%),
+      repeating-conic-gradient(from 0deg at 26% 50%, rgba(244, 230, 195, 0.04) 0deg 10deg, transparent 10deg 20deg),
+      linear-gradient(135deg, #24332a 0%, #111512 100%);
+  }
+  #lobby-bg-art {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+  #lh {
+    position: relative;
+    z-index: 2;
+    width: 450px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .flag-ribbon {
+    display: flex;
+    width: 140px;
+    height: 14px;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    animation: waveFlag 3s infinite ease-in-out;
+  }
+  @keyframes waveFlag {
+    0%, 100% { transform: skewX(0deg); }
+    50% { transform: skewX(-6deg); }
+  }
+  .flag-ribbon div:first-child { flex: 1; background: #d6362b; }
+  .flag-ribbon div:last-child { flex: 1; background: #f7f3e8; }
+
+  .edition-tag {
+    background: var(--mus);
+    color: var(--ink);
+    font-weight: 900;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 2px solid var(--ink);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  #lh h1 {
+    font: 900 94px/0.88 Impact, "Arial Black", sans-serif;
+    margin: 0;
+    color: var(--cream);
+    -webkit-text-stroke: 3.5px var(--ink);
+    text-shadow: 0 8px 0 var(--ink), 0 14px 24px rgba(0,0,0,0.7);
+    letter-spacing: 2px;
+  }
+  #lh h1 span { color: #e04332; }
+  .rb {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--gold);
+    padding: 7px 18px;
+    border-radius: 6px;
+    margin: 16px 0 10px;
+    font-weight: 900;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    border: 1.5px solid #f4e6c344;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  #lh p {
+    margin: 0 0 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #e4d7b7;
+  }
+  .lobby-highlights {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .hl-chip {
+    background: rgba(20, 18, 15, 0.72);
+    border: 1px solid #f4e6c333;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cream);
+  }
+
+  /* Kartu Pengaturan Lobi */
+  #lc {
+    position: relative;
+    z-index: 2;
+    width: 395px;
+    background: linear-gradient(180deg, #f7ebd0 0%, #e6d5ad 100%);
+    color: #261e15;
+    border-radius: 20px;
+    padding: 20px 24px;
+    border: 4px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.85), inset 0 2px 0 #fff;
+  }
+  .lc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px dashed rgba(38, 30, 21, 0.25);
+    padding-bottom: 8px;
+  }
+  .lc-head h3 { margin: 0; font-size: 21px; font-weight: 900; }
+  .stamp {
+    border: 2px solid var(--red);
+    color: var(--red);
+    font-size: 10px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transform: rotate(-6deg);
+    letter-spacing: 0.8px;
+  }
+  #lc label {
+    font-weight: 900;
+    font-size: 13px;
+    margin-top: 2px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pn {
+    min-width: 42px;
+    height: 36px;
+    padding: 0 13px;
+    border-radius: 10px;
+    border: 2px solid #261e15;
+    background: rgba(255,255,255,0.45);
+    color: #261e15;
+    font-weight: 800;
+    font-size: 13px;
+  }
+  .pn:hover { background: rgba(255,255,255,0.85); }
+  .pn.on {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--ink);
+    box-shadow: 0 3px 0 var(--ink);
+  }
+  #mdesc {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #4a3b2c;
+    background: rgba(38, 30, 21, 0.08);
+    padding: 6px 10px;
+    border-radius: 8px;
+    min-height: 34px;
+  }
+  #nms {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  #nms input {
+    user-select: text;
+    -webkit-user-select: text;
+    padding: 7px 10px;
+    border-radius: 9px;
+    border: 2px solid #261e15;
+    font: 700 13px 'Trebuchet MS', Arial, sans-serif;
+    background: #fffaf0;
+    color: #261e15;
+    min-width: 0;
+  }
+  #nms input:focus { outline: 2px solid var(--red); }
+  .go {
+    background: linear-gradient(180deg, #d84338, var(--red-dark));
+    font-size: 17px;
+    padding: 12px;
+    margin-top: 4px;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 5px 0 var(--ink);
+    letter-spacing: 0.5px;
+  }
+  .go:hover { filter: brightness(1.1); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <!-- Papan SVG 32 Petak -->
+    <svg id="bsvg" class="abs" viewBox="0 0 1000 1000"></svg>
+
+    <!-- Kontrol Lempar Dadu Tengah Papan -->
+    <div id="ctl" class="abs">
+      <div id="turn">Siap Bermain</div>
+      <div id="dice-box">
+        <div class="die" id="d1">🎲</div>
+        <div class="die" id="d2">🎲</div>
+      </div>
+      <div id="dice-sum"></div>
+      <button id="roll" disabled>🎲 Lempar Dadu</button>
+    </div>
+
+    <!-- Panel Status Pemain & Log -->
+    <div id="side" class="abs">
+      <div id="top">
+        <span>WNI <b>DESTINY</b></span>
+        <div class="top-btns">
+          <button class="tg" id="bSound" title="Suara Efek">🔊</button>
+          <button class="tg" id="bRulesTop">📖 Panduan</button>
+          <button class="tg" id="bLobby">🏠 Lobi</button>
+        </div>
+      </div>
+
+      <!-- Aksi Strategis Sebelum Lempar Dadu -->
+      <div id="actions">
+        <button class="act-btn" id="actSide" disabled>💼 Lembur/Sidejob<small>+Rp200rb | ❤-8 🧠-8</small></button>
+        <button class="act-btn" id="actHeal" disabled>☕ Healing Santai<small>-Rp150rb | 🧠+15</small></button>
+        <button class="act-btn" id="actDebt" disabled>🏦 Cicil Utang<small>Bayar Rp500rb</small></button>
+      </div>
+
+      <div id="ps"></div>
+      <div id="log"></div>
+    </div>
+
+    <!-- Modal Pemberitahuan Kartu & Event (Tidak Buru-Buru Tertutup) -->
+    <div id="md" class="ov">
+      <div class="cd" id="cd">
+        <div class="cd-badge" id="mbadge">KARTU PERISTIWA</div>
+        <h2 id="mt">Judul</h2>
+        <p id="mx">Deskripsi</p>
+        <div class="cd-timer-wrap" id="mtimerWrap">
+          <div class="cd-timer-bar" id="mtimerBar"></div>
+        </div>
+        <div id="mvote" class="vote-opts" style="display:none"></div>
+        <button id="mo">Mengerti & Lanjut</button>
+      </div>
+    </div>
+
+    <!-- Lobi Utama -->
+    <div id="lobby" class="ov" style="display:flex">
+      <!-- Dekorasi Siluet Kota & Monas di Lobi -->
+      <svg id="lobby-bg-art" viewBox="0 0 1000 600" preserveAspectRatio="none">
+        <g fill="#0c0f0d" opacity="0.55">
+          <rect x="40" y="460" width="45" height="140"/>
+          <rect x="95" y="420" width="55" height="180"/>
+          <rect x="160" y="480" width="40" height="120"/>
+          <!-- Siluet Monas -->
+          <path d="M248 260 h16 l10 210 h-36 z"/>
+          <rect x="236" y="250" width="40" height="10"/>
+          <ellipse cx="256" cy="235" rx="7" ry="14" fill="#e7b95f" opacity="0.8"/>
+          <rect x="215" y="470" width="82" height="35"/>
+          <rect x="195" y="505" width="122" height="95"/>
+          <rect x="330" y="440" width="50" height="160"/>
+          <rect x="390" y="470" width="65" height="130"/>
+        </g>
+      </svg>
+
+      <div id="lh">
+        <div class="flag-ribbon"><div></div><div></div></div>
+        <div class="edition-tag">EDISI SATIRE SOSIAL-EKONOMI</div>
+        <h1>WNI<br><span>DESTINY</span></h1>
+        <div class="rb">“You don’t win. You survive.”</div>
+        <p>Menjadi WNI adalah sebuah takdir. Hadapi pajak mendadak, inflasi, birokrasi berbelit, hingga kebijakan tak terduga!</p>
+        <div class="lobby-highlights">
+          <span class="hl-chip">🎲 32 Petak Takdir</span>
+          <span class="hl-chip">🗳️ Pemilu Tiap 10 Putaran</span>
+          <span class="hl-chip">💼 Aksi Side-Hustle</span>
+        </div>
+      </div>
+
+      <div id="lc">
+        <div class="lc-head">
+          <h3>Atur Permainan</h3>
+          <span class="stamp">DOKUMEN RESMI</span>
+        </div>
+
+        <label>Jumlah Warga (Pemain)</label>
+        <div class="seg" id="npb"></div>
+
+        <label>Mode Permainan</label>
+        <div class="seg">
+          <button class="pn on" data-m="0">🤖 Lawan Bot</button>
+          <button class="pn" data-m="1">👥 Gantian (Pass & Play)</button>
+        </div>
+        <div id="mdesc"></div>
+
+        <label>Tingkat Kesulitan Ekonomi</label>
+        <div class="seg">
+          <button class="pn on" data-diff="0">Kelas Menengah (Rp5 Jt)</button>
+          <button class="pn" data-diff="1">Mode Hardcore (Rp3,5 Jt)</button>
+        </div>
+
+        <label>Identitas Warga (Nama)</label>
+        <div id="nms"></div>
+
+        <button class="go" id="go">▶ MULAI BERTAHAN HIDUP</button>
+      </div>
+    </div>
+
+    <!-- Tombol Info & Panduan Bermain -->
+    <div id="tgs" class="abs">
+      <button class="tg" data-t="pa">Tentang</button>
+      <button class="tg" data-t="pr">Panduan Bermain</button>
+      <button class="tg" data-t="pb">Support ❤</button>
+
+      <div class="pop" id="pa">
+        <h4>Tentang WNI Destiny</h4>
+        Board game satire sosial-ekonomi bergaya Monopoly. Tidak ada pemenang resmi: bertahan selama mungkin menghadapi pajak, inflasi, birokrasi, dan kebijakan mendadak.<br><br>
+        Pemain terakhir yang bertahan meraih gelar <b>The Last WNI Standing</b>.
+        .<br><br>
+        <b>A Game by: @hywavess</b>.
+      </div>
+
+      <div class="pop" id="pr">
+        <h4>📖 Panduan Bermain</h4>
+        <ul>
+          <li><b>Tujuan Utama:</b> Bertahan hidup selama mungkin! Kamu tumbang (<i>Out of Survival</i>) jika utang menumpuk tak terbayar atau kehabisan uang & pekerjaan selama 3 putaran.</li>
+          <li><b>Alur Giliran:</b> Sebelum melempar dadu, kamu boleh memilih 1 aksi strategis (<i>Lembur/Sidejob</i>, <i>Healing Santai</i>, atau <i>Cicil Utang</i>), lalu klik <b>Lempar Dadu</b>.</li>
+          <li><b>Gaji & Biaya Hidup:</b> Biaya hidup dipotong setiap putaran (ditambah pajak Rp200rb tiap melewati petak Start), sedangkan gaji cair setiap <b>2 putaran</b> sekali.</li>
+          <li><b>Dadu Kembar:</b> Jika kedua dadu menghasilkan angka sama, Mentalmu otomatis bertambah +5.</li>
+          <li><b>Pemilu & Info Petak:</b> Setiap 10 putaran diadakan Pemilu untuk memilih kebijakan nasional. Kamu juga bisa mengklik petak mana saja di papan untuk membaca efeknya.</li>
+        </ul>
+      </div>
+
+      <div class="pop" id="pb">
+        <h4>Dukung Pengembangan</h4>
+        Game ini gratis untuk dimainkan bersama teman atau keluarga. Terima kasih sudah bermain dan bertahan hidup!<br><span id="dn"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// DATA PERMAINAN WNI DESTINY
+// =========================================================================
+const D = {
+  spaces: [
+    { name: "Selamat Datang di Indonesia", type: "start", effect: "Titik mulai permainan. Lewati petak ini = bayar pajak rutin Rp200.000." },
+    { name: "Gaji UMR", type: "income", effect: "Mendapatkan pendapatan tambahan Rp300.000 jika memiliki pekerjaan." },
+    { name: "Pajak Mendadak", type: "tax", effect: "Bayar pajak mendadak sebesar Rp250.000." },
+    { name: "Harga Beras Naik", type: "expense", effect: "Kehilangan Rp150.000 (terpengaruh inflasi) untuk kebutuhan pokok." },
+    { name: "Kartu Takdir", type: "destiny_card", effect: "Ambil satu kartu TAKDIR nasional." },
+    { name: "Jalan Berlubang", type: "expense", effect: "Bayar biaya servis & transportasi Rp100.000." },
+    { name: "Birokrasi Berbelit", type: "bureaucracy", effect: "Lempar dadu birokrasi: 1-2 antre (skip), 3-4 pungli Rp100rb, 6 selesai." },
+    { name: "Warung Sembako", type: "market", effect: "Beli kebutuhan pokok Rp100.000 (+inflasi). Kesehatan +5, Mental +5." },
+    { name: "Kartu Nasib WNI", type: "fate_card", effect: "Ambil satu kartu NASIB MENJADI WARGA WNI." },
+    { name: "Macet Nasional", type: "expense", effect: "Kehilangan uang bensin Rp100.000 dan Mental -5." },
+    { name: "THR Cair", type: "income", effect: "Mendapatkan bonus THR Rp500.000 (bersih setelah potongan)." },
+    { name: "Listrik Naik", type: "expense", effect: "Bayar tagihan token listrik Rp150.000." },
+    { name: "Korupsi Berjamaah", type: "national_event", effect: "Semua pemain terkena dampak kerugian negara -Rp150.000 & Kepercayaan -10." },
+    { name: "BPJS", type: "service", effect: "Bayar iuran Rp50.000. Mengaktifkan perlindungan diskon 50% biaya medis." },
+    { name: "Kartu Takdir", type: "destiny_card", effect: "Ambil satu kartu TAKDIR nasional." },
+    { name: "PHK Massal", type: "employment_event", effect: "Risiko kehilangan pekerjaan (50% peluang terkena PHK jika bekerja)." },
+    { name: "Harga BBM Naik", type: "expense", effect: "Bayar biaya transportasi tambahan Rp120.000 (+inflasi)." },
+    { name: "Kantor Pajak", type: "tax", effect: "Pemeriksaan keuangan dan pembayaran pajak 4% dari saldo (min Rp100rb)." },
+    { name: "Kenaikan UKT", type: "education_expense", effect: "Pemain berstatus Mahasiswa membayar biaya pendidikan Rp400.000." },
+    { name: "Kartu Nasib WNI", type: "fate_card", effect: "Ambil satu kartu NASIB MENJADI WARGA WNI." },
+    { name: "Janji Kampanye", type: "event", effect: "Mendapatkan harapan sementara: Mental +5, Kepercayaan Negara -10." },
+    { name: "Banjir Tahunan", type: "disaster", effect: "Kehilangan Rp300.000 untuk perbaikan rumah & Mental -5." },
+    { name: "Internet Lemot", type: "delay", effect: "Kehilangan satu giliran karena buffering." },
+    { name: "Diskon 12.12", type: "market", effect: "Checkout belanja Rp150.000, Mental +10." },
+    { name: "Kartu Takdir", type: "destiny_card", effect: "Ambil satu kartu TAKDIR nasional." },
+    { name: "Harga Cabai Meroket", type: "expense", effect: "Bayar kebutuhan dapur Rp150.000 (+inflasi)." },
+    { name: "Sidang Administrasi", type: "bureaucracy", effect: "Lempar dadu: bayar denda Rp200.000 atau skip 1 giliran." },
+    { name: "Kesehatan Nasional", type: "health_service", effect: "Pulihkan Kesehatan +25 dengan biaya Rp200.000 (Rp100.000 jika BPJS aktif)." },
+    { name: "Kartu Nasib WNI", type: "fate_card", effect: "Ambil satu kartu NASIB MENJADI WARGA WNI." },
+    { name: "Inflasi", type: "national_event", effect: "Semua pemain kehilangan uang Rp200.000 (+inflasi)." },
+    { name: "Lowongan Kerja", type: "employment", effect: "Pemain yang belum bekerja mendapat kesempatan melamar kerja." },
+    { name: "Akhir Bulan", type: "living_cost", effect: "Bayar biaya hidup darurat akhir bulan Rp200.000." }
+  ],
+  takdir: [
+    { title: "Negeri Kaya, Rakyat Biasa", effect: "Bayar Rp500.000." },
+    { title: "Subsidi Dicabut", effect: "Semua pemain membayar Rp300.000." },
+    { title: "Harga BBM Naik", effect: "Bayar Rp200.000." },
+    { title: "Rupiah Melemah", effect: "Semua biaya hidup naik 20% selama satu putaran." },
+    { title: "Proyek Strategis Nasional", effect: "Semua pemain kehilangan Rp250.000." },
+    { title: "Pajak Kreativitas", effect: "Bayar Rp150.000 untuk setiap aset." },
+    { title: "Kebijakan Berubah", effect: "Semua pemain wajib bayar iuran penyesuaian Rp100.000." },
+    { title: "Inflasi Menggila", effect: "Harga semua kebutuhan naik +30% selama 2 putaran." },
+    { title: "Bencana Nasional", effect: "Bayar Rp400.000 atau kehilangan 15 Kesehatan." },
+    { title: "Janji Manis Pemerintah", effect: "Mental +10; tidak ada perubahan ekonomi." },
+    { title: "Anggaran Pendidikan Dipangkas", effect: "Pemain berstatus Mahasiswa membayar Rp300.000." },
+    { title: "Bonus Demografi", effect: "Pemain mendapat kesempatan mengikuti event pencarian kerja." },
+    { title: "Pemadaman Listrik", effect: "Semua pemain kehilangan satu giliran." },
+    { title: "Impor Membanjiri Pasar", effect: "Pendapatan berikutnya turun 30%." },
+    { title: "Reshuffle Kabinet", effect: "Semua pemain yang bekerja dikocok ulang jenis pekerjaannya." }
+  ],
+  nasib: [
+    { title: "Gaji Belum Turun", effect: "Tidak menerima gaji pada satu jadwal pembayaran." },
+    { title: "Anak Kos Menangis", effect: "Bayar Rp250.000." },
+    { title: "Paket Datang", effect: "Mental +10." },
+    { title: "Salah Transfer", effect: "Kehilangan Rp100.000." },
+    { title: "Undangan Pernikahan", effect: "Bayar Rp200.000." },
+    { title: "Orang Dalam", effect: "Mendapatkan pekerjaan tetap secara instan!" },
+    { title: "Cicilan Menumpuk", effect: "Bayar Rp500.000." },
+    { title: "Promo Gratis Ongkir", effect: "Mental +5." },
+    { title: "Tanggal Tua", effect: "Pendapatan dipotong 50% pada pembayaran berikutnya." },
+    { title: "Dapat Beasiswa", effect: "Mendapat Rp750.000." },
+    { title: "Kena Tilang", effect: "Bayar Rp150.000." },
+    { title: "Kena Ghosting HRD", effect: "Mental -15." },
+    { title: "Warisan Keluarga", effect: "Mendapat Rp1.000.000." },
+    { title: "Harga Mi Instan Naik", effect: "Bayar Rp50.000." },
+    { title: "Tetangga Karaoke", effect: "Mental -10." },
+    { title: "Dapat Kerja Sampingan", effect: "Mendapat Rp300.000." },
+    { title: "Laptop Rusak", effect: "Bayar Rp600.000." },
+    { title: "WiFi Mati", effect: "Kehilangan satu giliran." },
+    { title: "Dapat THR", effect: "Mendapat Rp500.000." },
+    { title: "Salah Beli Barang", effect: "Kehilangan Rp200.000." }
+  ],
+  jobs: [
+    { name: "Pegawai Negeri", s: 600000 },
+    { name: "Karyawan Swasta", s: 500000 },
+    { name: "Freelancer", s: 400000 },
+    { name: "Pedagang", s: 550000 },
+    { name: "Pengangguran", s: 0 },
+    { name: "Mahasiswa", s: 0 },
+    { name: "Pengusaha", s: 800000 }
+  ],
+  fin: {
+    title: "Selamat!",
+    text: "Kamu berhasil bertahan sampai akhir. Kamu telah membayar pajak, menghadapi inflasi, kehilangan pekerjaan, dan melewati berbagai kebijakan. Sebagai penghargaan, kamu mendapatkan kewajiban membayar pajak tahun depan."
+  },
+  q: [
+    "Selamat datang di Indonesia. Negara yang kaya akan sumber daya, tetapi kamu tetap harus bayar parkir.",
+    "Tanggal 1: Kaya. Tanggal 30: Mohon maaf, saldo tidak mencukupi.",
+    "Pendidikan adalah investasi. Sayangnya, investasinya belum tentu kembali.",
+    "Kamu mendapatkan pekerjaan! Selamat! Gajimu cukup untuk bertahan selama dua putaran.",
+    "Harga kebutuhan naik. Tenang, gajimu tetap.",
+    "Pemerintah membuat kebijakan baru. Kamu tidak tahu apa yang berubah, tetapi kamu harus membayar.",
+    "Kamu mendapat bonus! Selamat, bonus tersebut terkena pajak.",
+    "Kamu berhasil melewati satu bulan. Sayangnya, bulan depan sudah menunggu."
+  ]
+};
+
+// =========================================================================
+// UTILITAS & EFEK SUARA SINTETIS (WEB AUDIO API)
+// =========================================================================
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = n => (Math.random() * n) | 0;
+const d6 = () => rnd(6) + 1;
+const fm = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+const sh = a => a.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+
+let soundOn = true;
+let audioCtx = null;
+function playTone(freq, type = 'sine', dur = 0.12, vol = 0.12) {
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  } catch (e) {}
+}
+const sfx = {
+  dice: () => playTone(320 + rnd(180), 'triangle', 0.06, 0.08),
+  hop: () => playTone(460, 'sine', 0.08, 0.1),
+  card: () => { playTone(520, 'triangle', 0.12, 0.12); setTimeout(() => playTone(660, 'triangle', 0.18, 0.12), 90); },
+  coin: () => { playTone(880, 'sine', 0.1, 0.1); setTimeout(() => playTone(1180, 'sine', 0.2, 0.1), 80); },
+  bad: () => { playTone(210, 'sawtooth', 0.18, 0.1); setTimeout(() => playTone(165, 'sawtooth', 0.25, 0.1), 120); }
+};
+
+$('bSound').onclick = () => {
+  soundOn = !soundOn;
+  $('bSound').textContent = soundOn ? '🔊' : '🔇';
+};
+
+// =========================================================================
+// KONSTANTA PAPAN & PEMBANGUNAN SVG
+// =========================================================================
+const COL = ['#e04836', '#2fa870', '#e6a829', '#3d77e0', '#a952cc', '#2bbaba'];
+const SAL = Object.fromEntries(D.jobs.map(j => [j.name, j.s]));
+const BN = ['Budi', 'Sari', 'Agus', 'Dewi', 'Rina'];
+const IC = {
+  start: '🏁', income: '💵', tax: '🧾', expense: '💸', destiny_card: '🃏',
+  fate_card: '🍀', bureaucracy: '📄', market: '🛒', national_event: '🏛',
+  service: '🩺', employment_event: '📉', education_expense: '🎓', event: '🎤',
+  disaster: '🌊', delay: '📶', health_service: '➕', employment: '💼', living_cost: '📅'
+};
+const DONATE_URL = 'https://saweria.co/hywavess';
+const FILL = { red: '#b8322a', grn: '#2f4a3d', crm: '#f1e3bd', mus: '#e7b95f' };
+const TX = { red: '#fff', grn: '#fff', crm: '#2a2118', mus: '#2a2118' };
+const MD = [
+  'Kamu melawan warga bot AI. Pilih total pemain (2–6).',
+  'Semua pemain adalah manusia, bermain bergantian di satu layar.'
+];
+const grp = t => ['start', 'destiny_card', 'national_event', 'employment_event'].includes(t)
+  ? 'red'
+  : ['tax', 'expense', 'service', 'bureaucracy'].includes(t)
+    ? 'grn'
+    : ['disaster', 'delay', 'education_expense', 'health_service', 'living_cost', 'employment'].includes(t)
+      ? 'mus'
+      : 'crm';
+
+function buildBoard() {
+  const A = Math.PI / 16;
+  const pt = (a, r) => (500 + r * Math.sin(a)).toFixed(1) + ' ' + (500 - r * Math.cos(a)).toFixed(1);
+  let s = `<defs>
+    <radialGradient id="sky" cx="50%" cy="48%" r="62%">
+      <stop offset="0" stop-color="#f6b062"/>
+      <stop offset=".55" stop-color="#d9482e"/>
+      <stop offset="1" stop-color="#7d2420"/>
+    </radialGradient>
+    <linearGradient id="gd" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14120f" stop-opacity="0"/>
+      <stop offset="1" stop-color="#14120f"/>
+    </linearGradient>
+    <clipPath id="cc"><circle cx="500" cy="500" r="292"/></clipPath>
+  </defs>
+  <rect width="1000" height="1000" fill="#c8cfbf"/>`;
+
+  for (let k = 0; k < 8; k++) {
+    s += `<rect x="${790 + k * 26}" y="${170 - (60 + k * 37 % 90)}" width="22" height="${60 + k * 37 % 90}" fill="#9fae9f"/>`;
+  }
+  s += `<rect x="34" y="30" width="7" height="200" fill="#3a2f26"/>
+        <rect x="41" y="34" width="150" height="36" fill="#c8362b"/>
+        <rect x="41" y="70" width="150" height="36" fill="#f6f0e0"/>`;
+  for (let k = 0; k < 36; k++) {
+    s += `<circle cx="${14 + k * 28}" cy="${968 - k % 3 * 8}" r="15" fill="#1a1917"/>
+          <rect x="${k * 28}" y="${975 - k % 3 * 8}" width="28" height="40" fill="#1a1917"/>`;
+  }
+  s += `<circle cx="500" cy="500" r="492" fill="#24302a" stroke="#f1e3bd" stroke-width="4"/>
+        <circle cx="500" cy="500" r="445" fill="none" stroke="#f1e3bd55" stroke-width="2"/>`;
+
+  D.spaces.forEach((x, i) => {
+    const g = grp(x.type), a0 = (i - 0.5) * A, a1 = (i + 0.5) * A;
+    const deg = i * 11.25, fl = deg > 90 && deg < 270, Y = o => fl ? o : -o, R = 365;
+    s += `<path class="cell" data-i="${i}" fill="${FILL[g]}" d="M${pt(a0, 435)}A435 435 0 0 1 ${pt(a1, 435)}L${pt(a1, 295)}A295 295 0 0 0 ${pt(a0, 295)}Z"/>`;
+    const w = x.name.replace(' di ', ' ').split(' '), L = [];
+    w.forEach(q => { L.length && (L[L.length - 1] + ' ' + q).length <= 9 ? L[L.length - 1] += ' ' + q : L.push(q); });
+    const fs = Math.min(15, 68 / (Math.max(...L.map(q => q.length)) * 0.6));
+    s += `<g transform="translate(${(500 + R * Math.sin(i * A)).toFixed(1)} ${(500 - R * Math.cos(i * A)).toFixed(1)}) rotate(${deg + (fl ? 180 : 0)})" text-anchor="middle" dominant-baseline="central" fill="${TX[g]}" font-weight="700">
+      <text y="${Y(50)}" font-size="25" font-weight="900">${i + 1}</text>
+      <text y="${Y(14)}" font-size="30">${IC[x.type]}</text>
+      ${L.map((q, k) => `<text y="${Y(-16 - k * (fs + 2))}" font-size="${fs.toFixed(1)}">${q}</text>`).join('')}
+    </g>`;
+  });
+
+  s += `<path d="M420 6h160l-14 22 14 22H420l14-22z" fill="#b8322a" stroke="#1d1a17" stroke-width="3"/>
+        <text x="500" y="30" text-anchor="middle" dominant-baseline="central" font-size="26" font-weight="900" fill="#fff">START</text>
+        <path d="M963 482l14 18-14 18-14-18zM37 482l14 18-14 18-14-18z" fill="#d94b6a" stroke="#f1e3bd" stroke-width="3"/>
+        <g clip-path="url(#cc)"><circle cx="500" cy="500" r="292" fill="url(#sky)"/>`;
+  for (let k = 0; k < 16; k += 2) {
+    s += `<polygon points="500 520 ${pt(k * Math.PI / 8, 600)} ${pt((k + 1) * Math.PI / 8, 600)}" fill="#ffe2a044"/>`;
+  }
+  s += `<path d="M488 330h24l12 250h-48z" fill="#cdbfa4" stroke="#3b342b" stroke-width="3"/>
+        <rect x="474" y="318" width="52" height="12" fill="#e8dcc0" stroke="#3b342b" stroke-width="2"/>
+        <ellipse cx="500" cy="300" rx="9" ry="17" fill="#f2b33d"/>`;
+  for (let x = 205; x < 800; x += 34) {
+    const h = 70 + x * 7 % 100;
+    s += `<rect x="${x}" y="${700 - h}" width="31" height="${h + 100}" fill="${x % 68 ? '#3a3633' : '#2a2724'}"/>`;
+  }
+  s += `<rect x="200" y="620" width="600" height="180" fill="url(#gd)"/></g>
+        <circle cx="500" cy="500" r="292" fill="none" stroke="#1d1a17" stroke-width="6"/>
+        <text x="500" y="458" text-anchor="middle" font-family="Impact,Arial Black,sans-serif" font-size="122" fill="#f1e3bd" stroke="#1d1a17" stroke-width="9" paint-order="stroke">WNI</text>
+        <text x="500" y="555" text-anchor="middle" font-family="Impact,Arial Black,sans-serif" font-size="95" fill="#d6402d" stroke="#1d1a17" stroke-width="9" paint-order="stroke">DESTINY</text>
+        <rect x="358" y="570" width="284" height="32" rx="6" fill="#14120f"/>
+        <text x="500" y="586" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="700" fill="#f1e3bd">You don’t win. You survive.</text>
+        <g id="tok"></g>`;
+  $('bsvg').innerHTML = s;
+}
+
+// =========================================================================
+// STATE & LOGIKA PERMAINAN
+// =========================================================================
+let P = [], cur = 0, round = 1, infl = { pct: 0, until: 0 }, rup = 0, over = true;
+let NP = 4, MODE = 0, DIFF = 0, DK, gid = 0, tIv, actionUsed = false;
+const alive = () => P.filter(p => p.alive);
+const paid = p => (SAL[p.job] || 0) > 0;
+
+buildBoard();
+
+// Klik petak di papan untuk mengintip informasi petak
+$('bsvg').onclick = e => {
+  const c = e.target.closest('.cell');
+  if (c && $('md').style.display !== 'flex') {
+    const i = +c.dataset.i, s = D.spaces[i];
+    card(grp(s.type), (i + 1) + '. ' + s.name, s.effect, { human: 1 }, 'INFO PETAK PAPAN');
+  }
+};
+
+// =========================================================================
+// SISTEM PEMBERITAHUAN / DIALOG KARTU (TIDAK BURU-BURU TERTUTUP)
+// =========================================================================
+async function card(cls, t, x, p, badge = 'KARTU PERISTIWA') {
+  sfx.card();
+  $('cd').className = 'cd ' + cls;
+  $('mbadge').textContent = badge;
+  $('mt').textContent = t;
+  $('mx').textContent = x;
+  $('mvote').style.display = 'none';
+  $('mo').style.display = 'inline-block';
+  $('md').style.display = 'flex';
+
+  const isHumanCard = !p || p.human;
+  const timerWrap = $('mtimerWrap');
+  const timerBar = $('mtimerBar');
+
+  if (isHumanCard) {
+    // Pemain manusia: TIDAK akan tertutup otomatis sampai tombol diklik!
+    timerWrap.style.display = 'none';
+    $('mo').textContent = 'Mengerti & Lanjut';
+    await new Promise(r => {
+      $('mo').onclick = () => {
+        $('md').style.display = 'none';
+        r();
+      };
+    });
+  } else {
+    // Giliran Bot: Waktu baca diperpanjang menjadi 4.5 detik + bisa dipercepat klik
+    const waitMs = 4500;
+    timerWrap.style.display = 'block';
+    timerBar.style.transition = 'none';
+    timerBar.style.width = '100%';
+    // Trigger reflow
+    void timerBar.offsetWidth;
+    timerBar.style.transition = `width ${waitMs}ms linear`;
+    timerBar.style.width = '0%';
+    $('mo').textContent = 'Lewati Jeda Bot ⏭';
+
+    await new Promise(r => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(tm);
+        $('md').style.display = 'none';
+        r();
+      };
+      const tm = setTimeout(finish, waitMs);
+      $('mo').onclick = finish;
+    });
+  }
+}
+
+// Dialog Pemilu Nasional (Setiap 10 Putaran - Saran Aturan Baru)
+async function electionEvent() {
+  const humanPlayer = alive().find(p => p.human);
+  const policies = [
+    {
+      title: '📦 Subsidi Bansos Darurat',
+      desc: 'Semua warga menerima bantuan tunai +Rp350.000, tapi inflasi +15%.',
+      apply: () => {
+        alive().forEach(p => p.money += 350000);
+        infl = { pct: infl.pct + 15, until: round + 2 };
+      }
+    },
+    {
+      title: '💎 Pajak Orang Kaya (Progresif)',
+      desc: 'Warga dengan saldo di atas Rp4.000.000 dipotong pajak 15% untuk kas negara.',
+      apply: () => {
+        alive().forEach(p => {
+          if (p.money > 4000000) pay(p, Math.round(p.money * 0.15));
+        });
+      }
+    },
+    {
+      title: '🏦 Pemutihan Utang Nasional',
+      desc: 'Semua utang warga di Bank Indonesia dipotong separuh (50%), Kepercayaan +10.',
+      apply: () => {
+        alive().forEach(p => {
+          p.debt = Math.round(p.debt * 0.5);
+          p.tr = Math.min(100, p.tr + 10);
+        });
+      }
+    }
+  ];
+
+  let chosen = policies[rnd(policies.length)];
+
+  if (humanPlayer) {
+    sfx.card();
+    $('cd').className = 'cd mus';
+    $('mbadge').textContent = '🗳️ PEMILU NASIONAL PUTARAN ' + round;
+    $('mt').textContent = 'Pilih Kebijakan Nasional Baru!';
+    $('mx').textContent = `${humanPlayer.n}, suaramu menentukan nasib seluruh warga untuk putaran berikutnya:`;
+    $('mtimerWrap').style.display = 'none';
+    $('mo').style.display = 'none';
+    const vBox = $('mvote');
+    vBox.style.display = 'flex';
+    vBox.innerHTML = policies.map((pol, idx) =>
+      `<button class="vote-btn" data-idx="${idx}">${pol.title}<br><small style="font-weight:600;opacity:.85">${pol.desc}</small></button>`
+    ).join('');
+    $('md').style.display = 'flex';
+
+    chosen = await new Promise(r => {
+      vBox.querySelectorAll('.vote-btn').forEach(btn => {
+        btn.onclick = () => {
+          $('md').style.display = 'none';
+          r(policies[+btn.dataset.idx]);
+        };
+      });
+    });
+  }
+
+  chosen.apply();
+  log(`🗳️ Hasil Pemilu: <b>${chosen.title}</b> disahkan!`);
+  render();
+}
+
+function log(t) {
+  const l = $('log');
+  l.insertAdjacentHTML('afterbegin', '<div>' + t + '</div>');
+  while (l.children.length > 45) l.lastChild.remove();
+}
+
+function out(p, w) {
+  if (p.alive) {
+    p.alive = false;
+    sfx.bad();
+    log('☠ <b>' + p.n + '</b> Out of Survival: ' + w);
+  }
+}
+
+function pay(p, a) {
+  if (!p.alive) return;
+  if (a > 0) sfx.bad();
+  p.money -= a;
+  while (p.money < 0 && p.alive) {
+    if (p.debt < 3e6) {
+      p.money += 1e6;
+      p.debt += 1e6;
+      log('🏦 ' + p.n + ' terpaksa pinjam Rp1.000.000 ke Bank Indonesia');
+    } else {
+      out(p, 'tidak sanggup membayar utang');
+    }
+  }
+}
+
+function stat(p, k, v) {
+  p[k] = Math.max(0, Math.min(100, p[k] + v));
+  if (k === 'h' && p.h <= 0) {
+    p.skip++;
+    p.h = 40;
+    pay(p, p.bpjs ? 15e4 : 3e5);
+    log('🏥 ' + p.n + ' masuk perawatan medis, skip 1 giliran');
+  }
+  if (k === 'mt' && p.mt <= 0) {
+    p.skip++;
+    p.mt = 40;
+    log('😵 ' + p.n + ' mengalami burnout, skip 1 giliran');
+  }
+}
+
+function search(p, r = d6()) {
+  if (r < 4) return 'Belum diterima kerja (Dadu: ' + r + ')';
+  p.job = r === 6
+    ? ['Pengusaha', 'Pegawai Negeri'][rnd(2)]
+    : ['Karyawan Swasta', 'Pegawai Negeri', 'Freelancer', 'Pedagang'][rnd(4)];
+  sfx.coin();
+  return 'Diterima sebagai ' + p.job + '!';
+}
+
+function fx(p, c) {
+  const e = c.effect, t = c.title;
+  const all = /^Semua pemain/.test(e);
+  const T = all ? alive() : [p];
+  const m = e.match(/Rp([\d.]+)/);
+  const a = m ? +m[1].replace(/\./g, '') : 0;
+  const g = /Mendapat/.test(e);
+  const mt = e.match(/Mental ([+-]\d+)/);
+
+  if (t === 'Bencana Nasional') {
+    p.money >= a ? pay(p, a) : stat(p, 'h', -15);
+    return 'Dampak bencana diterima';
+  }
+  if (t === 'Rupiah Melemah') { rup = round + 1; return 'Biaya hidup +20% satu putaran'; }
+  if (t === 'Kebijakan Berubah') { alive().forEach(x => pay(x, 1e5)); return 'Semua bayar Rp100.000'; }
+  if (t === 'Inflasi Menggila') { infl = { pct: 30, until: round + 1 }; return 'Harga kebutuhan +30%'; }
+  if (t === 'Anggaran Pendidikan Dipangkas') return p.job === 'Mahasiswa' ? (pay(p, a), 'Bayar ' + fm(a)) : 'Kamu bukan mahasiswa, aman';
+  if (t === 'Bonus Demografi') return paid(p) ? 'Kamu sudah bekerja' : search(p);
+  if (t === 'Orang Dalam') return search(p, 6);
+  if (t === 'Pemadaman Listrik') { alive().forEach(x => x.skip++); return 'Semua kehilangan 1 giliran'; }
+  if (t === 'Impor Membanjiri Pasar') { p.cut = 0.3; return 'Pendapatan berikutnya -30%'; }
+  if (t === 'Reshuffle Kabinet') {
+    alive().filter(paid).forEach(x => x.job = ['Pegawai Negeri', 'Karyawan Swasta', 'Freelancer', 'Pedagang'][rnd(4)]);
+    return 'Pekerjaan dikocok ulang';
+  }
+  if (t === 'Gaji Belum Turun') { p.nopay = 1; return 'Gaji berikutnya tidak cair'; }
+  if (t === 'Tanggal Tua') { p.cut = 0.5; return 'Pendapatan berikutnya -50%'; }
+  if (/Kehilangan satu giliran/.test(e)) { p.skip++; return 'Skip 1 giliran'; }
+
+  let r = '';
+  if (a) {
+    T.forEach(x => {
+      if (g) { x.money += a; sfx.coin(); }
+      else pay(x, a);
+    });
+    r = (g ? '+' : '-') + fm(a);
+  }
+  if (mt) {
+    stat(p, 'mt', +mt[1]);
+    r += ' Mental ' + mt[1];
+  }
+  return r || 'Tidak ada efek ekonomi';
+}
+
+const draw = k => {
+  if (!DK[k].length) DK[k] = sh(k === 't' ? D.takdir : D.nasib);
+  return DK[k].pop();
+};
+
+async function land(p) {
+  const n = p.pos + 1;
+  const s = D.spaces[p.pos];
+  const f = 1 + (infl.until >= round ? infl.pct / 100 : 0);
+  let r = '';
+
+  const EX = {
+    3: [25e4], 4: [15e4, 1], 6: [1e5], 10: [1e5, 0, -5],
+    12: [15e4], 17: [12e4, 1], 22: [3e5, 0, -5], 26: [15e4, 1], 32: [2e5]
+  };
+
+  if (EX[n]) {
+    const [a, i, m] = EX[n], t = a * (i ? f : 1);
+    pay(p, t);
+    if (m) stat(p, 'mt', m);
+    r = 'Bayar ' + fm(t) + (m ? ' · Mental ' + m : '');
+  } else if (n === 5 || n === 15 || n === 25) {
+    const c = draw('t');
+    r = fx(p, c);
+    return card('red', '🃏 ' + c.title, c.effect + '\n\nHasil: ' + r, p, 'KARTU TAKDIR NASIONAL');
+  } else if (n === 9 || n === 20 || n === 29) {
+    const c = draw('n');
+    r = fx(p, c);
+    return card('crm', '🍀 ' + c.title, c.effect + '\n\nHasil: ' + r, p, 'KARTU NASIB WNI');
+  } else if (n === 2) {
+    if (paid(p)) { p.money += 3e5; sfx.coin(); r = 'Gaji UMR +Rp300.000'; }
+    else r = 'Tanpa pekerjaan tetap, tidak ada gaji';
+  } else if (n === 7) {
+    let d = d6();
+    while (d === 5) d = d6();
+    if (d < 3) { p.skip++; r = 'Antre seharian (Dadu ' + d + '): skip 1 giliran'; }
+    else if (d < 5) { pay(p, 1e5); r = 'Pungli administrasi (Dadu ' + d + '): bayar Rp100.000'; }
+    else r = 'Urusan birokrasi selesai (Dadu ' + d + ')!';
+  } else if (n === 8) {
+    pay(p, 1e5 * f); stat(p, 'h', 5); stat(p, 'mt', 5);
+    r = 'Belanja ' + fm(1e5 * f) + ' · Kesehatan & Mental +5';
+  } else if (n === 11) {
+    p.money += 5e5; sfx.coin(); r = 'THR +Rp500.000 (setelah pajak)';
+  } else if (n === 13) {
+    alive().forEach(x => { pay(x, 15e4); x.tr = Math.max(0, x.tr - 10); });
+    r = 'Semua warga: -Rp150.000, Kepercayaan -10';
+  } else if (n === 14) {
+    pay(p, 5e4); p.bpjs = true;
+    r = 'Iuran Rp50.000, BPJS aktif (biaya medis separuh)';
+  } else if (n === 16) {
+    if (paid(p)) {
+      if (d6() < 4) { p.job = 'Pengangguran'; r = 'Kamu terkena PHK massal!'; }
+      else r = 'Selamat, posisimu aman dari PHK';
+    } else r = 'Tidak ada pekerjaan untuk di-PHK';
+    p.tr = Math.max(0, p.tr - 5);
+  } else if (n === 18) {
+    const t = Math.max(1e5, Math.max(0, p.money) * 0.04);
+    pay(p, t); r = 'Pajak penghasilan ' + fm(t);
+  } else if (n === 19) {
+    if (p.job === 'Mahasiswa') { pay(p, 4e5); r = 'UKT naik: bayar Rp400.000'; }
+    else r = 'Kamu bukan mahasiswa, aman dari UKT';
+  } else if (n === 21) {
+    stat(p, 'mt', 5); p.tr = Math.max(0, p.tr - 10);
+    r = 'Mental +5, Kepercayaan Negara -10';
+  } else if (n === 23) {
+    p.skip++; r = 'Koneksi putus: skip 1 giliran';
+  } else if (n === 24) {
+    pay(p, 15e4); stat(p, 'mt', 10);
+    r = 'Checkout Rp150.000, Mental +10';
+  } else if (n === 27) {
+    if (d6() < 4) { pay(p, 2e5); r = 'Kena denda administrasi Rp200.000'; }
+    else { p.skip++; r = 'Sidang molor: skip 1 giliran'; }
+  } else if (n === 28) {
+    pay(p, p.bpjs ? 1e5 : 2e5); stat(p, 'h', 25);
+    r = 'Berobat selesai, Kesehatan +25';
+  } else if (n === 30) {
+    pay(p, 2e5 * f); alive().forEach(x => x !== p && pay(x, 2e5 * f));
+    r = 'Semua warga terdampak -' + fm(2e5 * f);
+  } else if (n === 31) {
+    r = paid(p) ? 'Kamu sudah bekerja' : search(p);
+  } else {
+    r = n === 1 ? 'Selamat datang kembali di titik awal!' : '';
+  }
+
+  log(`📍 <b>${p.n}</b> mendarat di <b>${s.name}</b>${r ? ' → ' + r : ''}`);
+  await card(grp(s.type), n + '. ' + s.name + ' — ' + p.n, s.effect + (r ? '\n\nHasil: ' + r : ''), p, 'PETAK #' + n);
+}
+
+async function roundStart() {
+  round++;
+  const L = [];
+
+  if (round % 3 === 0) {
+    const d = d6(), pc = d < 3 ? 10 : d < 5 ? 20 : d === 5 ? 30 : 50;
+    infl = { pct: pc, until: round + 1 };
+    L.push('📈 Inflasi Baru: kebutuhan naik +' + pc + '% (berlaku 2 putaran)');
+  }
+
+  const f = 1 + (infl.until >= round ? infl.pct / 100 : 0);
+  alive().forEach(p => {
+    pay(p, (3e5 * (rup >= round ? 1.2 : 1) + (round % 5 === 0 ? 1e5 : 0)) * f);
+    stat(p, 'h', -2);
+    if (p.money < 1e6) stat(p, 'mt', -3);
+
+    if (round % 2 === 0) {
+      let g = (SAL[p.job] || 0) * (1 - p.cut) * (p.nopay ? 0 : 1);
+      if (p.job === 'Freelancer') g *= 0.6 + Math.random() * 0.8;
+      if (/Pedagang|Pengusaha/.test(p.job) && infl.until >= round) g *= 0.85;
+      if (g > 0) sfx.coin();
+      p.money += g;
+      p.cut = 0;
+      p.nopay = 0;
+      p.debt = Math.round(p.debt * 1.2);
+    }
+
+    if (p.debt && p.money > p.debt + 1e6) {
+      p.money -= p.debt;
+      p.debt = 0;
+    }
+
+    p.zr = p.money <= 0 && !paid(p) ? p.zr + 1 : 0;
+    if (p.zr >= 3) out(p, 'tanpa uang & pekerjaan selama 3 putaran');
+  });
+
+  L.push('💸 Biaya hidup rutin dibayar semua warga' + (round % 2 === 0 ? '; gaji cair & bunga utang +20%' : ''));
+
+  if (round % 5 === 0) {
+    alive().forEach(p => pay(p, 15e4));
+    L.push('🌧️ Musim Hujan & Tanggal Tua: semua bayar Rp150.000');
+  }
+
+  L.forEach(log);
+  const q = D.q[rnd(D.q.length)];
+  render();
+
+  await card('crm', 'Laporan Putaran ' + round, L.join('\n') + '\n\n“' + q + '”', alive().find(x => x.human) || {}, 'LAPORAN EKONOMI');
+
+  // Setiap 10 putaran, adakan PEMILU NASIONAL
+  if (round % 10 === 0 && alive().length > 1) {
+    await electionEvent();
+  }
+}
+
+function passStart(p) {
+  pay(p, 2e5);
+  log('🏁 ' + p.n + ' melewati Start: pajak rutin Rp200.000');
+}
+
+// =========================================================================
+// ANIMASI DADU & PERGERAKAN PION MELOMPAT (HOP)
+// =========================================================================
+async function animateDiceRoll() {
+  const d1 = $('d1'), d2 = $('d2');
+  d1.classList.add('rolling');
+  d2.classList.add('rolling');
+  $('dice-sum').textContent = 'Mengocok nasib...';
+
+  const faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  for (let i = 0; i < 10; i++) {
+    d1.textContent = faces[rnd(6)];
+    d2.textContent = faces[rnd(6)];
+    sfx.dice();
+    await sleep(65);
+  }
+
+  const a = d6(), b = d6();
+  d1.classList.remove('rolling');
+  d2.classList.remove('rolling');
+  d1.textContent = a;
+  d2.textContent = b;
+  return [a, b];
+}
+
+async function move(p, n) {
+  for (let k = 0; k < n; k++) {
+    p.pos = (p.pos + 1) % 32;
+    if (!p.pos) passStart(p);
+    sfx.hop();
+    render(p.i); // Tandai pion yang sedang melompat
+    await sleep(170);
+  }
+  render(); // Selesai melompat
+}
+
+// =========================================================================
+// AKSI STRATEGIS PEMAIN SEBELUM LEMPAR DADU
+// =========================================================================
+function updateActionButtons(p) {
+  const canAct = p && p.human && !$('roll').disabled && !actionUsed;
+  $('actSide').disabled = !canAct;
+  $('actHeal').disabled = !canAct || p.money < 150000;
+  $('actDebt').disabled = !canAct || p.debt <= 0 || p.money < 500000;
+}
+
+$('actSide').onclick = () => {
+  const p = P[cur];
+  if (!p || !p.human || actionUsed) return;
+  actionUsed = true;
+  p.money += 200000;
+  stat(p, 'h', -8);
+  stat(p, 'mt', -8);
+  sfx.coin();
+  log(`💼 <b>${p.n}</b> ambil kerja lembur/sidejob: +Rp200.000 (Kesehatan -8, Mental -8)`);
+  render();
+  updateActionButtons(p);
+};
+
+$('actHeal').onclick = () => {
+  const p = P[cur];
+  if (!p || !p.human || actionUsed || p.money < 150000) return;
+  actionUsed = true;
+  pay(p, 150000);
+  stat(p, 'mt', 15);
+  sfx.coin();
+  log(`☕ <b>${p.n}</b> healing santai: -Rp150.000, Mental pulih +15`);
+  render();
+  updateActionButtons(p);
+};
+
+$('actDebt').onclick = () => {
+  const p = P[cur];
+  if (!p || !p.human || actionUsed || p.debt <= 0 || p.money < 500000) return;
+  actionUsed = true;
+  const bayar = Math.min(500000, p.debt);
+  p.money -= bayar;
+  p.debt -= bayar;
+  sfx.coin();
+  log(`🏦 <b>${p.n}</b> mencicil utang ke Bank Indonesia sebesar ${fm(bayar)}`);
+  render();
+  updateActionButtons(p);
+};
+
+// =========================================================================
+// ALUR GILIRAN UTAMA
+// =========================================================================
+async function play(p) {
+  actionUsed = false;
+  render();
+
+  if (p.human) {
+    $('roll').disabled = false;
+    updateActionButtons(p);
+    let c = 45; // Waktu giliran lebih santai (45 detik)
+    const tk = () => $('turn').textContent = 'Giliran ' + p.n + ' · ' + c + 'd';
+    tk();
+    clearInterval(tIv);
+    tIv = setInterval(() => {
+      c--;
+      tk();
+      if (c <= 0) $('roll').click();
+    }, 1000);
+
+    await new Promise(r => $('roll').onclick = r);
+    clearInterval(tIv);
+    $('roll').disabled = true;
+    updateActionButtons(null);
+  } else {
+    updateActionButtons(null);
+    $('turn').textContent = '🤖 ' + p.n + ' sedang berpikir...';
+    await sleep(1600 + rnd(900));
+  }
+
+  const [a, b] = await animateDiceRoll();
+  const isDouble = a === b;
+  $('dice-sum').textContent = `Total Langkah: ${a + b}${isDouble ? ' (KEMBAR! Mental +5)' : ''}`;
+
+  if (isDouble) {
+    stat(p, 'mt', 5);
+    log(`✨ <b>${p.n}</b> melempar dadu kembar (${a} & ${b})! Semangat naik: Mental +5`);
+  }
+
+  await sleep(450);
+  await move(p, a + b);
+  await sleep(300);
+  await land(p);
+  render();
+}
+
+async function fin() {
+  over = true;
+  const w = alive()[0];
+  render();
+  await card(
+    'red',
+    w ? '🏆 The Last WNI Standing: ' + w.n : 'Semua Warga Out of Survival',
+    w
+      ? 'THE FINAL TAX\n' + D.fin.title + ' ' + D.fin.text + '\n\n(Bukan pemenang resmi. You don’t win. You survive.)'
+      : 'Negara tetap berjalan meski seluruh warga tumbang.',
+    { human: 1 },
+    'AKHIR PERMAINAN'
+  );
+  lobby();
+}
+
+async function loop() {
+  const g = gid;
+  while (!over && g === gid) {
+    const p = P[cur];
+    if (p.alive) {
+      if (p.skip > 0) {
+        p.skip--;
+        log('⏭ <b>' + p.n + '</b> melewatkan giliran');
+        render();
+        await sleep(1400);
+      } else {
+        await play(p);
+        await sleep(600);
+      }
+    }
+    if (g !== gid) return;
+    if (alive().length <= 1) return fin();
+
+    cur = (cur + 1) % NP;
+    if (cur === 0) await roundStart();
+    if (g !== gid) return;
+    if (alive().length <= 1) return fin();
+  }
+}
+
+// =========================================================================
+// RENDER PAPAN & STATUS PEMAIN
+// =========================================================================
+function render(hoppingIdx = -1) {
+  $('tok').innerHTML = alive().map(p => {
+    const a = p.pos * Math.PI / 16;
+    const o = alive().filter(q => q.pos === p.pos);
+    const k = o.indexOf(p);
+    const b = k * Math.PI / 3;
+    const n = o.length > 1 ? 20 : 0;
+    const cx = (500 + 365 * Math.sin(a) + n * Math.cos(b)).toFixed(1);
+    const cy = (500 - 365 * Math.cos(a) + n * Math.sin(b)).toFixed(1);
+    const isCur = !over && P[cur] && P[cur].i === p.i;
+    const isHop = hoppingIdx === p.i;
+
+    return `<g class="pawn-group${isCur ? ' active-pawn' : ''}${isHop ? ' hop' : ''}" transform="translate(${cx}, ${cy})">
+      <ellipse cx="0" cy="12" rx="11" ry="5" fill="rgba(0,0,0,0.45)"/>
+      ${isCur ? `<circle class="pawn-ring" cx="0" cy="0" r="18" fill="none" stroke="#ffd24a" stroke-width="3"/>` : ''}
+      <g class="pawn-body">
+        <circle cx="0" cy="0" r="14" fill="${p.c}" stroke="#fff" stroke-width="3.5"/>
+        <text x="0" y="1" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="900" fill="#fff">${p.n[0].toUpperCase()}</text>
+      </g>
+    </g>`;
+  }).join('');
+
+  document.querySelectorAll('.cell').forEach((c, i) => {
+    c.classList.toggle('cur', !over && !!P[cur] && P[cur].pos === i);
+  });
+
+  $('ps').innerHTML =
+    `<div class="round-bar">
+      <span>📅 Putaran ${round}</span>
+      <span>${infl.until >= round ? '📈 Inflasi +' + infl.pct + '%' : '📊 Ekonomi Stabil'}</span>
+    </div>` +
+    P.map(p =>
+      `<div class="pc${p.i === cur && !over ? ' on' : ''}${p.alive ? '' : ' x'}" style="--c:${p.c}">
+        <div class="stat-row">
+          <span><b>${p.n}</b> · ${p.job}${p.bpjs ? ' 🩺' : ''}${p.skip ? ' ⏭' : ''}</span>
+          <span>❤${p.h} 🧠${p.mt} 🏛${p.tr}</span>
+        </div>
+        <div class="stat-row">
+          <span style="font-weight:800;color:#ffd24a">💰 ${fm(p.money)}</span>
+          ${p.debt ? `<span style="color:#ff8b80;font-weight:700">Utang: ${fm(p.debt)}</span>` : '<span style="opacity:.6">Bebas Utang</span>'}
+        </div>
+      </div>`
+    ).join('');
+}
+
+// =========================================================================
+// INISIALISASI LOBI & PENGATURAN
+// =========================================================================
+function setup() {
+  gid++;
+  clearInterval(tIv);
+  const startMoney = DIFF === 0 ? 5000000 : 3500000;
+  const J = sh(D.jobs.map(j => j.name));
+
+  P = Array.from({ length: NP }, (_, i) => ({
+    i,
+    n: MODE ? (NM[i] || 'Warga ' + (i + 1)) : i ? BN[i - 1] : (NM[0] || 'Kamu'),
+    c: COL[i],
+    pos: 0,
+    money: startMoney,
+    h: 100,
+    mt: 100,
+    tr: 100,
+    job: J[i],
+    debt: 0,
+    skip: 0,
+    alive: true,
+    human: !!MODE || !i,
+    cut: 0,
+    nopay: 0,
+    zr: 0,
+    bpjs: false
+  }));
+
+  cur = 0;
+  round = 1;
+  infl = { pct: 0, until: 0 };
+  rup = 0;
+  over = false;
+  DK = { t: sh(D.takdir), n: sh(D.nasib) };
+
+  $('log').innerHTML = '';
+  $('lobby').style.display = 'none';
+  $('d1').textContent = '🎲';
+  $('d2').textContent = '🎲';
+  $('dice-sum').textContent = '';
+
+  render();
+  log(`🇮🇩 Permainan dimulai! Modal awal <b>${fm(startMoney)}</b>. Kartu pekerjaan dibagikan acak.`);
+  loop();
+}
+
+function lobby() {
+  gid++;
+  over = true;
+  clearInterval(tIv);
+  $('md').style.display = 'none';
+  $('roll').disabled = true;
+  updateActionButtons(null);
+  $('lobby').style.display = 'flex';
+}
+
+$('npb').innerHTML = [2, 3, 4, 5, 6].map(n =>
+  `<button class="pn${n === NP ? ' on' : ''}" data-n="${n}">${n}</button>`
+).join('');
+
+$('lobby').addEventListener('click', e => {
+  const b = e.target.closest('.pn');
+  if (!b) return;
+  if (b.dataset.n) {
+    NP = +b.dataset.n;
+    document.querySelectorAll('[data-n]').forEach(x => x.classList.toggle('on', x === b));
+    nameInputs();
+  } else if (b.dataset.m) {
+    MODE = +b.dataset.m;
+    $('mdesc').textContent = MD[MODE];
+    document.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x === b));
+    nameInputs();
+  } else if (b.dataset.diff) {
+    DIFF = +b.dataset.diff;
+    document.querySelectorAll('[data-diff]').forEach(x => x.classList.toggle('on', x === b));
+  }
+});
+
+let NM = [];
+function nameInputs() {
+  const h = MODE ? NP : 1;
+  $('nms').innerHTML = Array.from({ length: h }, (_, i) =>
+    `<input data-k="${i}" maxlength="12" placeholder="${MODE ? 'Nama Warga ' + (i + 1) : 'Namamu'}" value="${NM[i] || ''}">`
+  ).join('');
+}
+
+$('nms').addEventListener('input', e => {
+  NM[+e.target.dataset.k] = e.target.value.replace(/[<>&"']/g, '').trim().slice(0, 12);
+});
+
+nameInputs();
+$('go').onclick = setup;
+$('bLobby').onclick = lobby;
+$('bRulesTop').onclick = () => {
+  const x = $('pr'), o = x.style.display === 'block';
+  document.querySelectorAll('.pop').forEach(q => q.style.display = 'none');
+  x.style.display = o ? 'none' : 'block';
+};
+$('mdesc').textContent = MD[0];
+$('dn').innerHTML = DONATE_URL ? `<a href="${DONATE_URL}" target="_blank" rel="noopener">Donasi sekarang</a>` : '';
+
+document.querySelectorAll('#tgs .tg').forEach(b => b.onclick = () => {
+  const x = $(b.dataset.t), o = x.style.display === 'block';
+  document.querySelectorAll('.pop').forEach(q => q.style.display = 'none');
+  x.style.display = o ? 'none' : 'block';
+});
+
+function fit() {
+  const w = $('wrap'), s = Math.min(w.clientWidth / 1000, w.clientHeight / 600);
+  $('stage').style.transform = 'scale(' + s + ')';
+}
+addEventListener('resize', fit);
+fit();
+</script>
+</body>
+</html>
